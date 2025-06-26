@@ -1,0 +1,10 @@
+[project]
+name = "simple-chat"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "beaker>=1.13.0",
+    "bottle>=0.13.4",
+    "pycryptodome>=3.23.0",
+]
