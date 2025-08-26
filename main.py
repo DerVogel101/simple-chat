@@ -1,3 +1,12 @@
+"""Simple Chat application using Bottle and Beaker sessions.
+
+This module defines the web application routes for authentication, message
+posting, and message retrieval. It wires a SessionMiddleware around the
+Bottle app to manage user sessions via signed cookies.
+
+Note: Do not use the development debug configuration and the static
+session keys in production environments.
+"""
 import json
 import traceback
 import bottle as bt
@@ -21,10 +30,15 @@ app = SessionMiddleware(bt_app, session_opts)
 
 # Session-Helferfunktion
 def get_session():
+    """Return the current Beaker session object associated with the request."""
     return bt.request.environ.get('beaker.session')
 
 def require_authentication(func):
-    """Decorator to require authentication for certain routes."""
+    """Decorator to require authentication for certain routes.
+
+    If the session does not contain a 'username', the user is redirected to
+    the login page. Otherwise, the wrapped handler is executed.
+    """
     def wrapper(*args, **kwargs):
         session = get_session()
         if 'username' not in session:
@@ -36,21 +50,29 @@ def require_authentication(func):
 @bt_app.route('/', method=['GET'])
 @require_authentication
 def index():
+    """Render the chat UI for the currently authenticated user."""
     session = get_session()
     user = session.get('username')
     return bt.template("./tpl/index.html", username=user)
 
 @bt_app.route("/fail", method=['GET'])
 def fail():
+    """Serve the playful login error page."""
     return bt.static_file("login_error.html", root="./static")
 
 @bt_app.route("/style.css")
 def styles():
+    """Serve the main stylesheet from the static folder."""
     return bt.static_file("style.css", root="./static")
 
 # Login-Seite
 @bt_app.route("/auth", method=['GET', 'POST'])
 def auth():
+    """Handle login form (GET renders page, POST validates credentials).
+
+    On successful authentication the username is stored in the session and the
+    user is redirected to the chat index; otherwise a failure page is shown.
+    """
     session = get_session()
     if bt.request.method == 'POST':
         username = bt.request.forms.get('username')
@@ -67,6 +89,11 @@ def auth():
 @bt_app.route("/messages", method=["PUT"])
 @require_authentication
 def add_message():
+    """Create a new chat message for the authenticated user.
+
+    Expects a form field named 'msg' in the request body. Returns a simple
+    success text response used by the front-end.
+    """
     session = get_session()
     username = session.get('username')
     message = bt.request.forms.get('msg')
@@ -80,6 +107,12 @@ def add_message():
 @bt_app.route("/messages", method=["GET"])
 @require_authentication
 def get_messages():
+    """Return messages as JSON, optionally only newer than a given id.
+
+    Query parameter:
+      - last_id: if provided, only messages with id greater than this are
+        returned; the front-end uses it for incremental updates.
+    """
     last_update = bt.request.query.get('last_id', None)
     messages = db.fetch_messages(last_update=last_update)
     bt.response.content_type = 'application/json'
@@ -87,10 +120,17 @@ def get_messages():
 
 @bt_app.route("/signup", method=["GET"])
 def signup_page():
+    """Serve the signup page with client-side confirmation checks."""
     return bt.static_file("signup.html", root="./static")
 
 @bt_app.route("/signup", method=["POST"])
 def signup():
+    """Register a new user and log them in if successful.
+
+    Validates basic presence of username and password, delegates user
+    creation to DBConnector, handles unique constraint errors, and sets
+    the session to log in the new user immediately on success.
+    """
     username = bt.request.forms.get('username')
     password = bt.request.forms.get('password')
 
@@ -114,6 +154,7 @@ def signup():
 # Logout-Route
 @bt_app.route("/logout")
 def logout():
+    """Clear the session and redirect to the login page."""
     session = get_session()
     session.delete()
     return bt.redirect("/auth")
