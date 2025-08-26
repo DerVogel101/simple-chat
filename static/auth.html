@@ -1,5 +1,50 @@
 <form action="/auth" method="post">
-            Username: <input name="username" type="text" required/>
-            Password: <input name="password" type="password" required/>
-            <input value="Login" type="submit" />
-        </form>
+    <div class="auth-card">
+        <h1 class="app-title">Schätt Äbb</h1>
+
+        <label class="field">
+            <span class="label-text">Username</span>
+            <input id="username" name="username" type="text" required/>
+        </label>
+
+        <label class="field">
+            <span class="label-text">Password</span>
+            <input id="password" name="password" type="password" required/>
+        </label>
+
+        <div class="actions">
+            <input class="btn primary" value="Login" type="submit" />
+            <a class="btn link" href="/signup">Sign up</a>
+        </div>
+        <div id="validation-message" aria-live="polite" class="validation"></div>
+    </div>
+</form>
+
+<script type="text/javascript">
+    // Simple client-side validation for username+password confirmation before submit
+    (function () {
+        const form = document.querySelector('form[action="/auth"]');
+        const username = document.getElementById('username');
+        const password = document.getElementById('password');
+        const msg = document.getElementById('validation-message');
+
+        function validate() {
+            msg.textContent = '';
+            if (!username.value || !password.value) {
+                msg.textContent = 'Please fill username and password.';
+                return false;
+            }
+            // Add any additional checks here (length/complexity)
+            return true;
+        }
+
+        form.addEventListener('submit', function (e) {
+            if (!validate()) {
+                e.preventDefault();
+                username.focus();
+            }
+        }, false);
+    })();
+</script>
+
+<link rel="stylesheet" href="/style.css">

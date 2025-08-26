@@ -13,3 +13,6 @@ users = {
 def authenticate(username, password):
     return username in users \
             and users[username] == hashlib.sha256(password.encode('utf-8')).hexdigest()
+
+def get_hash(password):
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()

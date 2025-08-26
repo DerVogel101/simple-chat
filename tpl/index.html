@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Schätt Äbb</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .plane {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 9999;
+            animation: flycurve 2.5s ease-in-out forwards;
+        }
+
+        @keyframes flycurve {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 1;
+            }
+            30% {
+                transform: translate(120px, -150px) rotate(20deg);
+            }
+            60% {
+                transform: translate(-160px, -250px) rotate(-15deg);
+            }
+            90% {
+                transform: translate(40px, -80px) rotate(10deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        Willkommen zurück {{username}}!
+        <a href='/logout'>Logout</a>
+    </header>
+
+    <div id="messages_holder">
+        <!-- Nachrichten werden hier eingefügt -->
+    </div>
+
+    <form id="send_msg">
+        <input name="msg" type="text" placeholder="Nachricht eingeben..." required/>
+        <input value="🛫" type="submit" />
+    </form>
+
+    <script>
+        document.getElementById("send_msg").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const btn = this.querySelector('input[type="submit"]');
+        const rect = btn.getBoundingClientRect();
+
+        // Nachricht abschicken
+        fetch("/messages", {
+            method: "PUT",
+            body: new FormData(this)
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+                return Promise.reject('redirect');
+            }
+            return response.text();
+        })
+        .then(data => {
+            this.elements["msg"].value = "";
+
+            // Flugzeug starten
+            const plane = document.createElement("div");
+            plane.className = "plane";
+            plane.textContent = "🛫";
+
+            // Startposition = Button-Mitte
+            plane.style.left = rect.left + rect.width / 2 + "px";
+            plane.style.top = rect.top + rect.height / 2 + "px";
+
+            document.body.appendChild(plane);
+
+            // nach Animation wieder löschen
+            plane.addEventListener("animationend", () => {
+                plane.remove();
+            });
+        })
+        .catch(() => {});
+    });
+
+    </script>
+    <script>
+        let lastId = 0;
+        let lastDate = "";
+
+        function fetchMessages() {
+            fetch(`/messages?last_id=${lastId}`)
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return Promise.reject('redirect');
+                    }
+                    const ct = response.headers.get('content-type') || '';
+                    if (!ct.includes('application/json')) {
+                        // Non-JSON likely means an HTML page (e.g., login) was returned
+                        return response.text().then(() => Promise.reject('non-json'));
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const holder = document.getElementById("messages_holder");
+                    data.forEach(msg => {
+                        const [id, name, text, timestamp, color] = msg;
+                        const date = timestamp.split(" ")[0];
+                        const time = timestamp.split(" ")[1].slice(0,5);
+
+                        if (date !== lastDate) {
+                            const dateDiv = document.createElement("div");
+                            dateDiv.className = "date-separator";
+                            dateDiv.textContent = date;
+                            holder.appendChild(dateDiv);
+                            lastDate = date;
+                        }
+
+                        const div = document.createElement("div");
+                        div.className = "message";
+
+                        const meta = document.createElement("span");
+                        meta.className = "meta";
+                        meta.style.color = color;
+                        meta.textContent = `${name} ${time}:`;
+
+                        const msgText = document.createElement("span");
+                        msgText.className = "msg-text";
+                        msgText.textContent = text;
+
+                        div.appendChild(meta);
+                        div.appendChild(msgText);
+
+                        holder.appendChild(div);
+                        if (id > lastId) lastId = id;
+
+                        // immer zum neuesten scrollen
+                        holder.scrollTop = holder.scrollHeight;
+                    });
+                })
+                .catch(() => {});
+        }
+
+        setInterval(fetchMessages, 2000);
+        fetchMessages();
+    </script>
+</body>
+</html>

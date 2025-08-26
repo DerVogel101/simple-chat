@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Schätt Äbb — Sign up</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<form id="auth-form" action="/signup" method="post" novalidate>
+    <div class="auth-card">
+        <h1 class="app-title">Schätt Äbb — Sign up</h1>
+
+        <div class="field">
+            <label class="label-text" for="username">Username</label>
+            <input id="username" name="username" type="text" required />
+        </div>
+
+        <div class="field">
+            <label class="label-text" for="username_confirm">Confirm Username</label>
+            <input id="username_confirm" name="username_confirm" type="text" required />
+        </div>
+
+        <div class="field">
+            <label class="label-text" for="password">Password</label>
+            <input id="password" name="password" type="password" required />
+        </div>
+
+        <div class="field">
+            <label class="label-text" for="password_confirm">Confirm Password</label>
+            <input id="password_confirm" name="password_confirm" type="password" required />
+        </div>
+
+        <div id="validation-message" aria-live="polite" class="validation"></div>
+
+        <div class="actions">
+            <input id="submit-btn" class="btn primary" value="Sign up" type="submit" />
+            <a class="btn link" href="/auth">Already have an account?</a>
+        </div>
+    </div>
+</form>
+
+<script type="text/javascript">
+    /* Simple client-side validation: ensure username and password confirmations match
+       before allowing the form to be submitted. This improves UX but does NOT replace
+       server-side validation which is required for security. */
+    (function () {
+        const form = document.getElementById('auth-form');
+        const username = document.getElementById('username');
+        const usernameConfirm = document.getElementById('username_confirm');
+        const password = document.getElementById('password');
+        const passwordConfirm = document.getElementById('password_confirm');
+        const msg = document.getElementById('validation-message');
+
+        function validate() {
+            // Clear previous message
+            msg.textContent = '';
+
+            if (!username.value || !usernameConfirm.value || !password.value || !passwordConfirm.value) {
+                // Let native required attribute handle empty inputs, but show friendly hint
+                msg.textContent = 'Please fill all fields.';
+                return false;
+            }
+
+            if (username.value !== usernameConfirm.value) {
+                msg.textContent = 'Usernames do not match.';
+                return false;
+            }
+
+            if (password.value !== passwordConfirm.value) {
+                msg.textContent = 'Passwords do not match.';
+                return false;
+            }
+
+            // Optionally: add more checks (length, complexity) here
+            return true;
+        }
+
+        // Validate on input to give immediate feedback
+        [username, usernameConfirm, password, passwordConfirm].forEach(el =>
+            el.addEventListener('input', validate)
+        );
+
+        // Prevent submission if validation fails
+        form.addEventListener('submit', function (e) {
+            if (!validate()) {
+                e.preventDefault();
+                // Focus the first mismatched field
+                if (username.value !== usernameConfirm.value) {
+                    usernameConfirm.focus();
+                } else if (password.value !== passwordConfirm.value) {
+                    passwordConfirm.focus();
+                }
+            }
+        }, false);
+    })();
+</script>
+
+</body>
+</html>
