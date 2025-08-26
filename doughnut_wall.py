@@ -41,11 +41,13 @@ def verify_password(stored_hash: str, stored_salt: str, input_password: str) -> 
     input_hash, _ = hash_password(input_password, salt)
     return input_hash == stored_hash
 
-# ---- Example Usage ----
-# Register user:
-hashed, salt = hash_password("mysecretpassword")
-# Store hashed and salt
 
-# Check password:
-is_valid = verify_password(hashed, salt, "mysecretpassword")  # True
-is_invalid = verify_password(hashed, salt, "wrongpassword")   # False
+if __name__ == '__main__':
+    # ---- Example Usage ----
+    # Register user:
+    hashed, salt = hash_password("mysecretpassword")
+    # Store hashed and salt
+
+    # Check password:
+    is_valid = verify_password(hashed, salt, "mysecretpassword")  # True
+    is_invalid = verify_password(hashed, salt, "wrongpassword")   # False
