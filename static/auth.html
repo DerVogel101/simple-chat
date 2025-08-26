@@ -21,25 +21,41 @@
 </form>
 
 <script type="text/javascript">
-    // Simple client-side validation for username+password confirmation before submit
+    // Client-side guardrails for the login form.
+    //
+    // What this script does (high-level):
+    // - Grabs references to the login form and its fields.
+    // - Performs a minimal validation before the browser sends the POST request.
+    // - Shows a friendly inline validation message and keeps focus in the form if data is missing.
+    //
+    // Notes:
+    // - This enhances user experience only; the server still validates credentials.
+    // - We intentionally keep logic simple to avoid blocking legitimate submissions.
     (function () {
+        // Query key DOM elements once to avoid repeated lookups
         const form = document.querySelector('form[action="/auth"]');
         const username = document.getElementById('username');
         const password = document.getElementById('password');
         const msg = document.getElementById('validation-message');
 
+        // Return true when inputs look OK. Otherwise set an inline message and return false.
         function validate() {
+            // Clear any previous validation message
             msg.textContent = '';
+
+            // Minimal presence check: both fields required (HTML 'required' also helps)
             if (!username.value || !password.value) {
                 msg.textContent = 'Please fill username and password.';
                 return false;
             }
-            // Add any additional checks here (length/complexity)
+            // Potential extension point: enforce minimum length / password complexity here
             return true;
         }
 
+        // Intercept submit to run validation before the request is sent
         form.addEventListener('submit', function (e) {
             if (!validate()) {
+                // Stop the form submission and guide the user to the first field
                 e.preventDefault();
                 username.focus();
             }

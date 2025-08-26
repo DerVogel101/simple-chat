@@ -51,61 +51,79 @@
     </form>
 
     <script>
+        // Handle message submission from the input at the bottom.
+        //
+        // Flow overview:
+        // 1) Prevent the default form submit to keep the page from reloading.
+        // 2) Send the message via fetch PUT to /messages using FormData.
+        // 3) If the server asks us to redirect (e.g., session expired), follow it.
+        // 4) On success, clear the input field and show a short plane animation.
         document.getElementById("send_msg").addEventListener("submit", function(e) {
         e.preventDefault();
 
+        // We capture the submit button position to start the plane animation at the button center
         const btn = this.querySelector('input[type="submit"]');
         const rect = btn.getBoundingClientRect();
 
-        // Nachricht abschicken
+        // Send the message to the backend as multipart/form-data (FormData picks up the input named "msg")
         fetch("/messages", {
             method: "PUT",
             body: new FormData(this)
         })
         .then(response => {
+            // Bottle might respond with a redirect (e.g., if session expired)
             if (response.redirected) {
                 window.location.href = response.url;
-                return Promise.reject('redirect');
+                return Promise.reject('redirect'); // short-circuit the promise chain
             }
-            return response.text();
+            return response.text(); // backend returns a simple success text
         })
         .then(data => {
+            // Clear the text field after a successful send
             this.elements["msg"].value = "";
 
-            // Flugzeug starten
+            // Create and launch the tiny plane animation as a fun visual cue
             const plane = document.createElement("div");
             plane.className = "plane";
             plane.textContent = "🛫";
 
-            // Startposition = Button-Mitte
+            // Start position = center of the submit button
             plane.style.left = rect.left + rect.width / 2 + "px";
             plane.style.top = rect.top + rect.height / 2 + "px";
 
             document.body.appendChild(plane);
 
-            // nach Animation wieder löschen
+            // Remove the temporary element once the CSS animation finishes
             plane.addEventListener("animationend", () => {
                 plane.remove();
             });
         })
-        .catch(() => {});
+        .catch(() => { /* Intentionally ignore errors here to keep typing uninterrupted */ });
     });
 
     </script>
     <script>
+        // Simple polling loop to fetch and render new messages.
+        //
+        // State:
+        // - lastId: highest message id we have rendered so far (used for incremental fetches)
+        // - lastDate: tracks the last rendered calendar date to insert date separators when the date changes
         let lastId = 0;
         let lastDate = "";
 
         function fetchMessages() {
+            // Ask the server only for messages newer than lastId to reduce payload
             fetch(`/messages?last_id=${lastId}`)
                 .then(response => {
+                    // If our session is gone, the backend redirects to /auth; honor it immediately
                     if (response.redirected) {
                         window.location.href = response.url;
                         return Promise.reject('redirect');
                     }
+                    // Guard against receiving an HTML page (e.g., a login form) instead of JSON
                     const ct = response.headers.get('content-type') || '';
                     if (!ct.includes('application/json')) {
-                        // Non-JSON likely means an HTML page (e.g., login) was returned
+                        // Consume the body to avoid unhandled promise warnings, then bail out
                         return response.text().then(() => Promise.reject('non-json'));
                     }
                     return response.json();
@@ -113,10 +131,12 @@
                 .then(data => {
                     const holder = document.getElementById("messages_holder");
                     data.forEach(msg => {
+                        // The backend returns: [id, username, text, timestamp, color]
                         const [id, name, text, timestamp, color] = msg;
                         const date = timestamp.split(" ")[0];
-                        const time = timestamp.split(" ")[1].slice(0,5);
+                        const time = timestamp.split(" ")[1].slice(0,5); // HH:MM
 
+                        // Insert date separator when the day changes
                         if (date !== lastDate) {
                             const dateDiv = document.createElement("div");
                             dateDiv.className = "date-separator";
@@ -125,12 +145,13 @@
                             lastDate = date;
                         }
 
+                        // Build a message row: [meta][text]
                         const div = document.createElement("div");
                         div.className = "message";
 
                         const meta = document.createElement("span");
                         meta.className = "meta";
-                        meta.style.color = color;
+                        meta.style.color = color; // per-user color supplied by the server
                         meta.textContent = `${name} ${time}:`;
 
                         const msgText = document.createElement("span");
@@ -141,15 +162,17 @@
                         div.appendChild(msgText);
 
                         holder.appendChild(div);
-                        if (id > lastId) lastId = id;
+                        if (id > lastId) lastId = id; // advance waterline for next poll
 
-                        // immer zum neuesten scrollen
+                        // Always keep the view scrolled to the newest message
                         holder.scrollTop = holder.scrollHeight;
                     });
                 })
+                // Swallow transient errors (network hiccups, auth redirects handled above)
                 .catch(() => {});
         }
 
+        // Poll every 2 seconds; also fetch immediately on page load
         setInterval(fetchMessages, 2000);
         fetchMessages();
     </script>

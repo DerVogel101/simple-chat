@@ -42,10 +42,14 @@
 </form>
 
 <script type="text/javascript">
-    /* Simple client-side validation: ensure username and password confirmations match
-       before allowing the form to be submitted. This improves UX but does NOT replace
-       server-side validation which is required for security. */
+    // Client-side validation for the signup form.
+    //
+    // Goals:
+    // - Prevent obvious mistakes (mismatched username/password confirmation) before sending a POST.
+    // - Provide immediate, accessible feedback through a live region (aria-live="polite").
+    // - Keep logic minimal; the server remains the source of truth for validation.
     (function () {
+        // Cache references to form elements for clarity and performance
         const form = document.getElementById('auth-form');
         const username = document.getElementById('username');
         const usernameConfirm = document.getElementById('username_confirm');
@@ -53,40 +57,44 @@
         const passwordConfirm = document.getElementById('password_confirm');
         const msg = document.getElementById('validation-message');
 
+        // Returns true when all quick checks pass. Otherwise sets an error message and returns false.
         function validate() {
-            // Clear previous message
+            // Clear previous message to ensure screen readers announce the latest update
             msg.textContent = '';
 
+            // Presence check; HTML 'required' attributes also assist here
             if (!username.value || !usernameConfirm.value || !password.value || !passwordConfirm.value) {
-                // Let native required attribute handle empty inputs, but show friendly hint
+                // We still set a friendly summary to guide the user
                 msg.textContent = 'Please fill all fields.';
                 return false;
             }
 
+            // Compare usernames
             if (username.value !== usernameConfirm.value) {
                 msg.textContent = 'Usernames do not match.';
                 return false;
             }
 
+            // Compare passwords (no strength/length enforcement here)
             if (password.value !== passwordConfirm.value) {
                 msg.textContent = 'Passwords do not match.';
                 return false;
             }
 
-            // Optionally: add more checks (length, complexity) here
+            // Extension point: enforce length/complexity (e.g., password length >= 8)
             return true;
         }
 
-        // Validate on input to give immediate feedback
+        // Live validation: run on any input change to give immediate feedback
         [username, usernameConfirm, password, passwordConfirm].forEach(el =>
             el.addEventListener('input', validate)
         );
 
-        // Prevent submission if validation fails
+        // Final gate on submit; keep focus on the first problematic field
         form.addEventListener('submit', function (e) {
             if (!validate()) {
                 e.preventDefault();
-                // Focus the first mismatched field
+                // Direct focus to the first field that needs attention for better accessibility
                 if (username.value !== usernameConfirm.value) {
                     usernameConfirm.focus();
                 } else if (password.value !== passwordConfirm.value) {
