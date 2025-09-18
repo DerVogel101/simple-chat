@@ -199,3 +199,88 @@ Context: Each test spins up a local WSGI HTTP server using wsgiref.simple_server
   - After successful signup/login, the index should be accessible and show the username.
   - Logout must clear the session and protect routes again.
 - Assessment: Successful.
+
+
+---
+
+# Manual Web Browser Testing
+
+Prerequisites:
+- Python 3.13 installed
+- Project dependencies installed (see pyproject.toml)
+
+Setup (one-time per session):
+1. Start the application server:
+   - Command: python main.py
+   - Default address: http://localhost:8080
+2. Open a modern browser (Edge, Chrome, Firefox) and navigate to http://localhost:8080/auth.
+
+Manual Test Cases
+
+1) Auth page fail
+   - Input data (steps):
+     - Open http://localhost:8080/auth
+     - Enter Wrong credentials rather@not.dont and password wrong; click Login.
+   - Observed output data:
+     - The /auth page renders with title “Schätt Äbb” and Login elements.
+     - /style.css returns CSS text.
+     - After submitting wrong credentials, I am are redirected to /fail and see an interesting error page.
+   - Expected output data:
+     - Login page elements are present, stylesheet served, error page served.
+   - Assessment:
+     - Successful all elements work as described.
+
+2) Auth page
+   - Input data (steps):
+     - Open http://localhost:8080/auth
+     - Enter right credentials admin and password admin; click Login.
+   - Observed output data:
+     - The /auth page renders with title “Schätt Äbb” and Login elements.
+     - /style.css returns CSS text.
+     - After submitting the right credentials, I am are redirected to / and see the Chat page.
+   - Expected output data:
+     - Login page elements are present, stylesheet served, Chat Page Served.
+   - Assessment:
+     - Successful all elements work as described.
+
+3) Chat page send message
+   - Input data (steps):
+     - After login as admin, on the Chat page, enter "Hello World!" in the message input and click Send.
+   - Observed output data:
+     - The message "Hello World!" appears in the chat history with my username and a timestamp.
+     - The input field is cleared after sending.
+     - My username is "admin" and my chat color is a hex color code.
+   - Expected output data:
+     - Message appears in chat history with correct formatting.
+     - Input field is cleared.
+     - The username should be "admin" and the chat color should be a hex color code.
+   - Assessment:
+     - Successful message sending and display work as described.
+
+4) Recieve Message from another user
+   - Input data (steps):
+     - Open a second browser or incognito window.
+     - Navigate to http://localhost:8080/auth and sign in with username: max  password: 12345
+     - On the Chat page, enter "Hi Admin!" in the message input and click Send.
+   - Observed output data:
+     - The message "Hi Admin!" appears in the chat history with the username "max" and a timestamp.
+     - The input field is cleared after sending.
+     - The username is "max" and the chat color is a hex color code.
+   - Expected output data:
+     - Message appears in chat history with correct formatting.
+     - Input field is cleared.
+     - The username should be "max" and the chat color should be a hex color code.
+   - Assessment:
+     - Successful message sending and display work as described.
+
+5) Logout
+   - Input data (steps):
+     - On the Chat page, click the Logout button.
+   - Observed output data:
+     - I am redirected to the /auth page.
+     - The session is cleared; accessing / again redirects back to /auth.
+   - Expected output data:
+     - Logout redirects to /auth and clears the session.
+     - Accessing protected routes redirects to /auth.
+   - Assessment:
+     - Successful logout and session management work as described.

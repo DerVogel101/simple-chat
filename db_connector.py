@@ -74,11 +74,11 @@ class DBConnector:
 if __name__ == '__main__':
 
     users = {
-        ("max@mail.com", "max"): "12345",
-        ("kim@mail.com", "kim"): "23456",
-        ("ina@mail.com", "ina"): "34567",
-        ("ulf@mail.com", "ulf"): "45678",
-        ("admin@mail.com", "admin"): "admin",
+        ("max", "max"): "12345",
+        ("kim", "kim"): "23456",
+        ("ina", "ina"): "34567",
+        ("ulf", "ulf"): "45678",
+        ("admin", "admin"): "admin",
     }
 
     db = DBConnector()
@@ -88,6 +88,6 @@ if __name__ == '__main__':
             db.insert_user(email, username, pwhash)
         except sqlite3.IntegrityError:
             pass
-    print(db.authenticate_user("max@mail.com", "12345"))  # True
-    print(db.authenticate_user("max@mail.com", "wrong"))  # False
+    print(db.authenticate_user("max", "12345"))  # True
+    print(db.authenticate_user("max", "wrong"))  # False
     db.close()
