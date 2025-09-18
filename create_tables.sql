@@ -1,15 +1,15 @@
 CREATE TABLE IF NOT EXISTS users (
-    username TEXT NOT NULL PRIMARY KEY,
+    username TEXT NOT NULL,
     pwhash BLOB NOT NULL,
+    email TEXT NOT NULL PRIMARY KEY,
     salt BLOB NOT NULL,
     chat_color TEXT NOT NULL DEFAULT '#000000'
 );
 
 CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL,
+    email TEXT NOT NULL,
     message TEXT NOT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    color TEXT NOT NULL DEFAULT '#000000',
-    FOREIGN KEY (username) REFERENCES users(username)
+    FOREIGN KEY (email) REFERENCES users(email)
 );

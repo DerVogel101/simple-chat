@@ -12,6 +12,7 @@ import traceback
 import bottle as bt
 from beaker.middleware import SessionMiddleware
 from db_connector import DBConnector
+from doughnut_wall import validate_email
 
 
 session_opts = {
@@ -36,12 +37,12 @@ def get_session():
 def require_authentication(func):
     """Decorator to require authentication for certain routes.
 
-    If the session does not contain a 'username', the user is redirected to
+    If the session does not contain a 'email', the user is redirected to
     the login page. Otherwise, the wrapped handler is executed.
     """
     def wrapper(*args, **kwargs):
         session = get_session()
-        if 'username' not in session:
+        if 'email' not in session:
             return bt.redirect('/auth')
         return func(*args, **kwargs)
     return wrapper
@@ -70,16 +71,17 @@ def styles():
 def auth():
     """Handle login form (GET renders page, POST validates credentials).
 
-    On successful authentication the username is stored in the session and the
+    On successful authentication the email is stored in the session and the
     user is redirected to the chat index; otherwise a failure page is shown.
     """
     session = get_session()
     if bt.request.method == 'POST':
-        username = bt.request.forms.get('username')
+        email = bt.request.forms.get('email')
         password = bt.request.forms.get('password')
-
-        if db.authenticate_user(username, password):
+        valid, username = db.authenticate_user(email, password)
+        if valid:
             session['username'] = username
+            session["email"] = email
             session.save()  # Speichert die Session!
             return bt.redirect('/')
         else:
@@ -95,13 +97,13 @@ def add_message():
     success text response used by the front-end.
     """
     session = get_session()
-    username = session.get('username')
+    email = session.get('email')
     message = bt.request.forms.get('msg')
 
     if not message:
         return "<p>Message cannot be empty.</p>"
 
-    db.insert_message(username, message)
+    db.insert_message(email, message)
     return "Message added successfully"
 
 @bt_app.route("/messages", method=["GET"])
@@ -132,20 +134,22 @@ def signup():
     the session to log in the new user immediately on success.
     """
     username = bt.request.forms.get('username')
+    email = bt.request.forms.get('email')
     password = bt.request.forms.get('password')
 
-    if not username or not password:
+    if not username or not password or not email or not validate_email(email):
         return bt.redirect("/signup")
 
     try:
-        db.insert_user(username, password)
+        db.insert_user(email, username, password)
     except Exception as e:
         traceback.print_exc()
-        return bt.abort(text="Error during signup - possibly username already exists. go back to -> /auth", code=400)
-
-    if db.authenticate_user(username, password):
+        return bt.abort(text="Error during signup - possibly username or email already exists. go back to -> /auth", code=400)
+    valid, username = db.authenticate_user(email, password)
+    if valid:
         session = get_session()
         session['username'] = username
+        session['email'] = email
         session.save()  # Speichert die Session!
         return bt.redirect('/')
     else:

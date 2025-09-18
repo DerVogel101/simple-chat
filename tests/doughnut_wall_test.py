@@ -7,7 +7,7 @@ These tests validate:
 - Password verification works for correct and incorrect inputs.
 """
 import unittest as ut
-from doughnut_wall import make_salt, hash_password, verify_password
+from doughnut_wall import make_salt, hash_password, verify_password, validate_email
 
 
 class TestDoughnutWall(ut.TestCase):
@@ -50,6 +50,30 @@ class TestDoughnutWall(ut.TestCase):
         stored_hash, stored_salt = hash_password(pw)
         self.assertTrue(verify_password(stored_hash, stored_salt, pw))
         self.assertFalse(verify_password(stored_hash, stored_salt, 'wrong'))
+
+    def test_validate_email(self):
+        """validate_email returns True for valid emails, False otherwise."""
+        valid_emails = [
+            "valid@mail.com",
+            "miml@asssddahbbashhsabfhsabfhbfhdbhuasafbhasfbhufb345433232ß4059849320.de"
+        ]
+        invalid_emails = [
+            "invalidmail.com",
+            "invalid@mailcom",
+            "invalid@ mail.com",
+            "invalid@@mail.com",
+            "invalid@mail..com",
+            "invalid@.com",
+            "invalid@a.com ",
+            "@mail.com",
+            "plainaddress",
+            "missing@domain",
+            "missingatsign.com"
+        ]
+        for email in valid_emails:
+            self.assertTrue(validate_email(email), f"Should be valid: {email}")
+        for email in invalid_emails:
+            self.assertFalse(validate_email(email), f"Should be invalid: {email}")
 
 
 if __name__ == '__main__':

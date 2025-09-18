@@ -3,8 +3,8 @@
         <h1 class="app-title">Schätt Äbb</h1>
 
         <label class="field">
-            <span class="label-text">Username</span>
-            <input id="username" name="username" type="text" required/>
+            <span class="label-text">E-Mail</span>
+            <input id="email" name="email" type="text" required/>
         </label>
 
         <label class="field">
@@ -34,7 +34,7 @@
     (function () {
         // Query key DOM elements once to avoid repeated lookups
         const form = document.querySelector('form[action="/auth"]');
-        const username = document.getElementById('username');
+        const email = document.getElementById('email');
         const password = document.getElementById('password');
         const msg = document.getElementById('validation-message');
 
@@ -44,8 +44,8 @@
             msg.textContent = '';
 
             // Minimal presence check: both fields required (HTML 'required' also helps)
-            if (!username.value || !password.value) {
-                msg.textContent = 'Please fill username and password.';
+            if (!email.value || !password.value) {
+                msg.textContent = 'Please fill email and password.';
                 return false;
             }
             // Potential extension point: enforce minimum length / password complexity here
@@ -57,7 +57,6 @@
             if (!validate()) {
                 // Stop the form submission and guide the user to the first field
                 e.preventDefault();
-                username.focus();
             }
         }, false);
     })();

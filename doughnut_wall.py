@@ -6,6 +6,7 @@ storing hash and salt in the database.
 """
 import os
 import hashlib
+import re
 
 # Create salt
 def make_salt() -> bytes:
@@ -40,6 +41,12 @@ def verify_password(stored_hash: str, stored_salt: str, input_password: str) -> 
     salt = bytes.fromhex(stored_salt)
     input_hash, _ = hash_password(input_password, salt)
     return input_hash == stored_hash
+
+
+email_regex = re.compile(r'^[^\s@]+@([^\s@.]+\.)+[^\s@.]+$')
+def validate_email(email: str) -> bool:
+    """Return True if the email has a basic valid format, False otherwise."""
+    return bool(email_regex.fullmatch(email))
 
 
 if __name__ == '__main__':

@@ -5,6 +5,8 @@ messages, and verifying user credentials with salted password hashes.
 """
 import sqlite3
 import random
+from warnings import deprecated
+
 from doughnut_wall import hash_password, verify_password
 
 class DBConnector:
@@ -26,36 +28,42 @@ class DBConnector:
         self.cursor.executescript(sql_script)
         self.connection.commit()
 
-    def insert_user(self, name, password):
+    def insert_user(self, email, name, password):
         """Insert a new user with a random chat color and a salted pw hash."""
         pwhash, salt = hash_password(password)
         color = '#{:06x}'.format(random.randint(0, 0xFFFFFF))
-        self.cursor.execute('INSERT INTO users (username, pwhash, salt, chat_color) VALUES (?, ?, ?, ?)', (name, pwhash, salt, color))
+        self.cursor.execute('INSERT INTO users (username, email, pwhash, salt, chat_color) VALUES (?, ?, ?, ?, ?)', (name, email, pwhash, salt, color))
         self.connection.commit()
 
-    def fetch_user(self, name):
-        """Return (username, chat_color) for the given username or None."""
-        self.cursor.execute('SELECT username, chat_color FROM users WHERE username = ?', (name,))
+    @deprecated("Not usy usy anymoore")
+    def fetch_user(self, email):
+        """Return (username, chat_color) for the given email or None. (Deprecated)"""
+        self.cursor.execute('SELECT username, chat_color FROM users WHERE email = ?', (email,))
         return self.cursor.fetchone()
 
     def fetch_messages(self, last_update: None | str = None):
         """Fetch messages joined with user color, optionally newer than last_update."""
-        self.cursor.execute('SELECT messages.*, users.chat_color FROM messages JOIN users ON messages.username = users.username WHERE messages.id > ? ORDER BY timestamp ASC', (last_update,) if last_update else (0,))
+        self.cursor.execute('SELECT users.username, messages.*, users.chat_color FROM messages JOIN users ON messages.email = users.email WHERE messages.id > ? ORDER BY timestamp ASC', (last_update,) if last_update else (0,))
         return self.cursor.fetchall()
 
-    def insert_message(self, username, message):
-        """Persist a new message authored by the given username."""
-        self.cursor.execute('INSERT INTO messages (username, message) VALUES (?, ?)', (username, message))
+    def insert_message(self, email, message):
+        """Persist a new message authored by the user identified by the given email."""
+        self.cursor.execute('INSERT INTO messages (email, message) VALUES (?, ?)', (email, message))
         self.connection.commit()
 
-    def authenticate_user(self, name, pw):
-        """Return True if credentials are valid, False if invalid, None if user missing."""
-        self.cursor.execute("SELECT salt, pwhash FROM users WHERE username = ?", (name,))
+    def authenticate_user(self, email, pw):
+        """Authenticate a user by email and password.
+
+        Returns a tuple (is_valid, username):
+        - is_valid: True if the password matches; False if it does not or the user does not exist.
+        - username: The stored username for the account if it exists; otherwise None.
+        """
+        self.cursor.execute("SELECT salt, pwhash, username FROM users WHERE email = ?", (email,))
         row = self.cursor.fetchone()
         if row is None:
-            return None
-        salt, stored_hash = row
-        return verify_password(stored_hash, salt, pw)
+            return False, None
+        salt, stored_hash, username = row
+        return verify_password(stored_hash, salt, pw), username
 
 
     def close(self):
@@ -65,19 +73,20 @@ class DBConnector:
 if __name__ == '__main__':
 
     users = {
-        "max": "12345",
-        "kim": "23456",
-        "ina": "34567",
-        "ulf": "45678",
-        "admin": "admin",
+        ("max@mail.com", "max"): "12345",
+        ("kim@mail.com", "kim"): "23456",
+        ("ina@mail.com", "ina"): "34567",
+        ("ulf@mail.com", "ulf"): "45678",
+        ("admin@mail.com", "admin"): "admin",
     }
 
     db = DBConnector()
     for username, pwhash in users.items():
+        email, username = username
         try:
-            db.insert_user(username, pwhash)
+            db.insert_user(email, username, pwhash)
         except sqlite3.IntegrityError:
             pass
-    print(db.authenticate_user("max", "12345"))  # True
-    print(db.authenticate_user("max", "wrong"))  # False
+    print(db.authenticate_user("max@mail.com", "12345"))  # True
+    print(db.authenticate_user("max@mail.com", "wrong"))  # False
     db.close()

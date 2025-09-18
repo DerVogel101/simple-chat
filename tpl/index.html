@@ -131,8 +131,8 @@
                 .then(data => {
                     const holder = document.getElementById("messages_holder");
                     data.forEach(msg => {
-                        // The backend returns: [id, username, text, timestamp, color]
-                        const [id, name, text, timestamp, color] = msg;
+                        // The backend returns: [username, id, email, text, timestamp, color]
+                        const [name, id, email, text, timestamp, color] = msg;
                         const date = timestamp.split(" ")[0];
                         const time = timestamp.split(" ")[1].slice(0,5); // HH:MM
 

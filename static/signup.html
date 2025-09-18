@@ -13,6 +13,20 @@
         <h1 class="app-title">Schätt Äbb — Sign up</h1>
 
         <div class="field">
+            <label class="label-text" for="email">E-Mail</label>
+            <div style="display: flex; align-items: center;">
+                <input id="email" name="email" type="text" required style="flex:1;" />
+                <span id="email-valid-indicator" style="margin-left:8px;"></span>
+            </div>
+
+        </div>
+
+        <div class="field">
+            <label class="label-text" for="email_confirm">Confirm E-Mail</label>
+            <input id="email_confirm" name="email_confirm" type="text" required />
+        </div>
+
+        <div class="field">
             <label class="label-text" for="username">Username</label>
             <input id="username" name="username" type="text" required />
         </div>
@@ -51,11 +65,27 @@
     (function () {
         // Cache references to form elements for clarity and performance
         const form = document.getElementById('auth-form');
+        const email = document.getElementById('email');
+        const emailConfirm = document.getElementById('email_confirm');
         const username = document.getElementById('username');
         const usernameConfirm = document.getElementById('username_confirm');
         const password = document.getElementById('password');
         const passwordConfirm = document.getElementById('password_confirm');
         const msg = document.getElementById('validation-message');
+        const indicator = document.getElementById('email-valid-indicator');
+
+        function isValidEmail(email) {
+            return /^([^\s@]+)@([^\s@.]+\.)+[^\s@.]+$/.test(email);
+        }
+        email.addEventListener('input', function () {
+            if (!email.value) {
+                indicator.textContent = '';
+            } else if (isValidEmail(email.value)) {
+                indicator.textContent = '✅';
+            } else {
+                indicator.textContent = '❌';
+            }
+        });
 
         // Returns true when all quick checks pass. Otherwise sets an error message and returns false.
         function validate() {
@@ -63,12 +93,16 @@
             msg.textContent = '';
 
             // Presence check; HTML 'required' attributes also assist here
-            if (!username.value || !usernameConfirm.value || !password.value || !passwordConfirm.value) {
+            if (!email.value || !emailConfirm.value || !username.value || !usernameConfirm.value || !password.value || !passwordConfirm.value) {
                 // We still set a friendly summary to guide the user
                 msg.textContent = 'Please fill all fields.';
                 return false;
             }
-
+            // Compare emails
+            if (email.value !== emailConfirm.value) {
+                msg.textContent = 'Emails do not match.';
+                return false;
+            }
             // Compare usernames
             if (username.value !== usernameConfirm.value) {
                 msg.textContent = 'Usernames do not match.';
@@ -81,12 +115,18 @@
                 return false;
             }
 
+            if (!isValidEmail(email.value)) {
+                msg.textContent = 'Please enter a valid email address.';
+                email.focus();
+                return false;
+            }
+
             // Extension point: enforce length/complexity (e.g., password length >= 8)
             return true;
         }
 
         // Live validation: run on any input change to give immediate feedback
-        [username, usernameConfirm, password, passwordConfirm].forEach(el =>
+        [email, emailConfirm, username, usernameConfirm, password, passwordConfirm].forEach(el =>
             el.addEventListener('input', validate)
         );
 
@@ -99,6 +139,8 @@
                     usernameConfirm.focus();
                 } else if (password.value !== passwordConfirm.value) {
                     passwordConfirm.focus();
+                } else if (email.value !== emailConfirm.value) {
+                    emailConfirm.focus();
                 }
             }
         }, false);
