@@ -56,8 +56,8 @@ class TestDBConnector(ut.TestCase):
             self.db.insert_user(email, username, pw)
 
     def test_authenticate_user(self):
-        """authenticate_user returns None (missing), True (correct), False (wrong)."""
-        self.assertIsNone(self.db.authenticate_user('missing', 'x'))
+        """authenticate_user returns (False, None) for missing, (True/False, username) otherwise."""
+        self.assertEqual(self.db.authenticate_user('missing', 'x'), (False, None))
         email = 'carol@carol.mail'
         username = "carol"
         pw = 'pw3'

@@ -13,7 +13,8 @@ class DBConnector:
     """Thin wrapper around sqlite3 for the app's persistence needs."""
     def __init__(self, db_name='database.db'):
         """Open a connection to the SQLite database and ensure schema exists."""
-        self.connection = sqlite3.connect(db_name)
+        # Allow usage from server threads in tests/endpoints by disabling thread check
+        self.connection = sqlite3.connect(db_name, check_same_thread=False)
         self.cursor = self.connection.cursor()
         self._create_tables()
 
