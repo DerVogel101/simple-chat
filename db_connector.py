@@ -35,7 +35,7 @@ class DBConnector:
         self.cursor.execute('INSERT INTO users (username, email, pwhash, salt, chat_color) VALUES (?, ?, ?, ?, ?)', (name, email, pwhash, salt, color))
         self.connection.commit()
 
-    @deprecated("Not usy usy anymoore")
+    @deprecated("Only for testing purposes; use authenticate_user instead.")
     def fetch_user(self, email):
         """Return (username, chat_color) for the given email or None. (Deprecated)"""
         self.cursor.execute('SELECT username, chat_color FROM users WHERE email = ?', (email,))
