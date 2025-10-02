@@ -120,6 +120,48 @@ def get_messages():
     bt.response.content_type = 'application/json'
     return json.dumps(messages)
 
+@bt.route("/user/delete", method=['POST'])
+@require_authentication
+def delete_user():
+    """Delete the currently authenticated user and log them out.
+
+    After deletion, the session is cleared and the user is redirected to
+    the login page.
+    """
+    session = get_session()
+    email = session.get('email')
+    if email:
+        try:
+            db.delete_user(email)
+        except Exception as e:
+            traceback.print_exc()
+            return bt.abort(text="Error during user deletion.", code=500)
+        session.delete()  # Clear session after user deletion
+    return bt.redirect('/auth')
+
+@bt.route("/user/change_password", method=['POST'])
+@require_authentication
+def change_password():
+    """Change the password for the currently authenticated user.
+
+    Expects a form field named 'new_password' in the request body.
+    After changing the password, the user is redirected to the chat index.
+    """
+    session = get_session()
+    email = session.get('email')
+    new_password = bt.request.forms.get('new_password')
+
+    if not new_password:
+        return bt.abort(text="New password cannot be empty.", code=400)
+
+    try:
+        db.change_user_password(email, new_password)
+    except Exception as e:
+        traceback.print_exc()
+        return bt.abort(text="Error during password change.", code=500)
+
+    return bt.redirect('/')
+
 @bt_app.route("/signup", method=["GET"])
 def signup_page():
     """Serve the signup page with client-side confirmation checks."""

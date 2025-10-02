@@ -8,15 +8,14 @@ import random
 from warnings import deprecated
 
 from doughnut_wall import hash_password, verify_password
+from userbase_db import UserManager
 
-class DBConnector:
+
+class DBConnector(UserManager):
     """Thin wrapper around sqlite3 for the app's persistence needs."""
     def __init__(self, db_name='database.db'):
         """Open a connection to the SQLite database and ensure schema exists."""
-        # Allow usage from server threads in tests/endpoints by disabling thread check
-        self.connection = sqlite3.connect(db_name, check_same_thread=False)
-        self.cursor = self.connection.cursor()
-        self._create_tables()
+        super().__init__(db_name)
 
     def _create_tables(self):
         """Create database tables if they do not exist yet.
@@ -65,11 +64,6 @@ class DBConnector:
             return False, None
         salt, stored_hash, username = row
         return verify_password(stored_hash, salt, pw), username
-
-
-    def close(self):
-        """Close the underlying SQLite connection."""
-        self.connection.close()
 
 if __name__ == '__main__':
 
