@@ -120,7 +120,12 @@ def get_messages():
     bt.response.content_type = 'application/json'
     return json.dumps(messages)
 
-@bt.route("/user/delete", method=['POST'])
+@bt_app.route("/user/manage", method=['GET'])
+@require_authentication
+def manage_user():
+    return bt.static_file("self_support.html", root="./static")
+
+@bt_app.route("/user/delete", method=['POST'])
 @require_authentication
 def delete_user():
     """Delete the currently authenticated user and log them out.
@@ -139,7 +144,7 @@ def delete_user():
         session.delete()  # Clear session after user deletion
     return bt.redirect('/auth')
 
-@bt.route("/user/change_password", method=['POST'])
+@bt_app.route("/user/change_password", method=['POST'])
 @require_authentication
 def change_password():
     """Change the password for the currently authenticated user.

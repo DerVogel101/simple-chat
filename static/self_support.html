@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kontoeinstellungen</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        /* Danger-Variante für den Lösch-Button (und Hover-Tausch) */
+        .btn.danger {
+            background: #c0392b;
+            color: #ffffff;
+            border-color: #c0392b;
+        }
+        /* Gleiche Größe für beide Buttons in der Actions-Zeile */
+        .actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+        .actions .btn {
+            flex: 1;
+            min-width: 0; /* verhindert Breiten-“Aufblähen” durch langen Text */
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        Kontoeinstellungen
+        <a href="/" id="backToChat">← Zurück zum Chat</a>
+    </header>
+
+    <div class="auth-card">
+        <h2 class="app-title">Konto verwalten</h2>
+
+        <!-- Password Change Section -->
+        <div style="margin-bottom: 2rem;">
+            <h3 style="color: var(--primary); font-size: 1.1rem; margin-bottom: 1rem;">Passwort ändern</h3>
+            <form id="passwordForm" action="/user/change_password" method="POST">
+                <div class="field">
+                    <label class="label-text">Neues Passwort</label>
+                    <input type="password" id="newPassword" name="new_password" required>
+                </div>
+                <div class="field">
+                    <label class="label-text">Passwort bestätigen</label>
+                    <input type="password" id="confirmPassword" required>
+                </div>
+                <div class="validation" id="passwordValidation"></div>
+                <button type="submit" class="btn primary" style="width: 100%;">Passwort ändern</button>
+            </form>
+        </div>
+
+        <!-- Logout and Delete Account Section -->
+        <div style="border-top: 1px solid #e6e9ee; padding-top: 1.5rem;">
+            <h3 style="color: var(--primary); font-size: 1.1rem; margin-bottom: 1rem;">Kontoverwaltung</h3>
+            <div class="actions">
+                <button class="btn danger" id="logoutBtn">Konto löschen</button>
+                <button class="btn primary" id="deleteBtn">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden form for account deletion -->
+    <form id="deleteForm" action="/user/delete" method="POST" style="display: none;">
+        <input type="hidden" name="confirm" value="true">
+    </form>
+
+    <script>
+        const passwordForm = document.getElementById('passwordForm');
+        const newPassword = document.getElementById('newPassword');
+        const confirmPassword = document.getElementById('confirmPassword');
+        const validation = document.getElementById('passwordValidation');
+
+        // Real-time validation
+        confirmPassword.addEventListener('input', validatePasswords);
+        newPassword.addEventListener('input', validatePasswords);
+
+        function validatePasswords() {
+            if (confirmPassword.value === '') {
+                validation.textContent = '';
+                validation.style.color = '';
+                return false;
+            }
+
+            if (newPassword.value !== confirmPassword.value) {
+                validation.textContent = '⚠ Passwörter stimmen nicht überein';
+                validation.style.color = '#c0392b';
+                return false;
+            } else {
+                validation.textContent = '✓ Passwörter stimmen überein';
+                validation.style.color = '#27ae60';
+                return true;
+            }
+        }
+
+        // Form submission with validation
+        passwordForm.addEventListener('submit', function(e) {
+            if (!validatePasswords() || newPassword.value === '') {
+                e.preventDefault();
+                validation.textContent = '⚠ Bitte geben Sie ein gültiges Passwort ein';
+                validation.style.color = '#c0392b';
+                return false;
+            }
+            // Form will submit normally to /user/change_password
+        });
+
+        // Logout button
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+                window.location.href = '/logout';
+        });
+
+        // Delete account button
+        document.getElementById('deleteBtn').addEventListener('click', function() {
+            const confirmation = prompt('WARNUNG: Diese Aktion kann nicht rückgängig gemacht werden.\nGeben Sie "LÖSCHEN" ein, um Ihr Konto zu löschen:');
+            if (confirmation === 'LÖSCHEN') {
+                document.getElementById('deleteForm').submit();
+            } else if (confirmation !== null) {
+                alert('Kontolöschung abgebrochen.');
+            }
+        });
+
+        // --- Hover: Aussehen + Text zwischen Logout und Löschen tauschen (Funktion bleibt) ---
+        const logoutBtn = document.getElementById('logoutBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
+
+        const originalLogoutText = logoutBtn.textContent;
+        const originalDeleteText = deleteBtn.textContent;
+
+        function hover_over() {
+            logoutBtn.classList.remove('danger');
+            logoutBtn.classList.add('primary');
+            logoutBtn.textContent = originalDeleteText; // "Konto löschen"
+            deleteBtn.classList.remove('primary');
+            deleteBtn.classList.add('danger');
+            deleteBtn.textContent = originalLogoutText; // "Logout"
+        }
+
+        function hover_out() {
+            logoutBtn.classList.remove('primary');
+            logoutBtn.classList.add('danger');
+            logoutBtn.textContent = originalLogoutText; // "Logout"
+            deleteBtn.classList.remove('danger');
+            deleteBtn.classList.add('primary');
+            deleteBtn.textContent = originalDeleteText; // "Konto löschen"
+        }
+        // Beim Hover über Logout: wie Löschen aussehen + Text "Konto löschen"
+        logoutBtn.addEventListener('mouseenter', () => {
+            hover_over();
+        });
+        logoutBtn.addEventListener('mouseleave', () => {
+            hover_out();
+        });
+        // Beim Hover über Löschen: wie Logout aussehen + Text "Logout"
+        deleteBtn.addEventListener('mouseenter', () => {
+            hover_over()
+        });
+        deleteBtn.addEventListener('mouseleave', () => {
+            hover_out();
+        });
+    </script>
+</body>
+</html>
